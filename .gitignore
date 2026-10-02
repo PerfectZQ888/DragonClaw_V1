@@ -1,0 +1,64 @@
+# === 敏感文件（禁止上传）===
+.auth_token
+*.token
+openclaw.json
+**/openclaw.json
+
+# === 会话数据（含隐私）===
+**/*.jsonl
+sessions/
+
+# === 备份文件 ===
+backup/
+*.bak
+*.tar.gz
+*.zip
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# === 系统 ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.nohup.out
+
+# === 日志 ===
+*.log
+tmp/
+/tmp/
+
+# === IDE ===
+.vscode/
+.idea/
+backup_*/
+docs/DEPLOY_SOP.md
+team-memory/
+docs/GITHUB_SOP.md
+
+# 脚本目录（本地保留，不上传）
+scripts/
+
+# 任务协作文档（本地保留，不上传）
+tasks/coordination/agent_coordination_test.md
+tasks/coordination/audit_live_page.md
+tasks/coordination/dashboard_check_live.md
+tasks/coordination/data_audit_dashboard.md
+tasks/coordination/fix_frontend.md
+tasks/coordination/fix_live_page.md
+tasks/coordination/fix_subagent_tasks.md
+tasks/coordination/fix_system_monitor.md
+tasks/coordination/security_audit_dashboard.md
+tasks/coordination/task_log.md
+**/.usage_scan_positions.json
+
+# dashboard 运行时数据 (2026-10-02 转开源整改)
+dashboard/data/collaboration_chain.json
+dashboard/data/dragonclaw_shared_tasks.json

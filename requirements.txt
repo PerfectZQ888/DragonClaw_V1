@@ -1,0 +1,10 @@
+# DragonClaw V1 Dashboard - Python Dependencies
+# Python 3.9+ 必需
+#
+# 安装方法:
+#   pip install -r requirements.txt
+#
+# 说明: V1 dashboard 只用 Python stdlib + psutil (系统监控)
+# - psutil: 跨平台系统监控 (CPU/内存/磁盘/网络)
+
+psutil>=5.9.0

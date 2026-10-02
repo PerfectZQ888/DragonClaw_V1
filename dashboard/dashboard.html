@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>🦞 DragonClaw - 综合监控中心 V1.0.0</title>
+    <meta name="version" content="V1.0.0">
+    <script>
+        window.dashboardStart = Date.now();
+        console.log('Dashboard HTML loaded, version:', window.dashboardStart);
+    </script>
+    <style>
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #131a4a;
+            --bg-card: #1a1f4e;
+            --accent: #f97316;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #2d3a8c;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'SF Mono', monospace; background: var(--bg-primary); color: var(--text); min-height: 100vh; }
+        
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+            border-bottom: 1px solid var(--border);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 2rem; animation: glow 2s infinite; }
+        @keyframes glow { 0%,100% { text-shadow: 0 0 20px rgba(249,115,22,0.5); } 50% { text-shadow: 0 0 40px rgba(249,115,22,0.8); } }
+        .logo h1 { font-size: 1.4rem; background: linear-gradient(90deg, var(--accent), #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .nav-tabs {
+            display: flex; gap: 8px; padding: 15px 30px;
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 10px 18px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-muted); cursor: pointer; font-size: 0.85rem; border-radius: 8px;
+            transition: all 0.3s; font-family: inherit;
+        }
+        .tab:hover { border-color: var(--accent); color: var(--text); }
+        .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+        
+        .main { padding: 20px 30px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        /* Grid Layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);
+            overflow: hidden; transition: all 0.3s;
+        }
+        .card:hover { border-color: var(--accent); }
+        .card-header {
+            padding: 12px 16px; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-header h3 { font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .card-body { padding: 15px; }
+        
+        /* Stats */
+        .stat-big { text-align: center; padding: 20px; }
+        .stat-big .value { font-size: 2.5rem; font-weight: 700; color: var(--accent); }
+        .stat-big .label { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
+        
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-row .label { color: var(--text-muted); font-size: 0.85rem; }
+        .stat-row .value { font-weight: 600; }
+        .stat-row .value.success { color: var(--success); }
+        .stat-row .value.warning { color: var(--warning); }
+        .stat-row .value.danger { color: var(--danger); }
+        
+        /* Progress Bar */
+        .progress-bar { height: 8px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .progress-fill.success { background: var(--success); }
+        .progress-fill.warning { background: var(--warning); }
+        .progress-fill.danger { background: var(--danger); }
+        
+        /* Lists */
+        .list-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px;
+            background: var(--bg-primary); border-radius: 8px; margin-bottom: 8px;
+        }
+        .list-item:last-child { margin-bottom: 0; }
+        .list-icon { font-size: 1.2rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; }
+        .list-content { flex: 1; }
+        .list-title { font-size: 0.85rem; font-weight: 600; word-break: break-word; white-space: pre-wrap; line-height: 1.4; }
+        .list-title.truncate { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .list-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .list-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+        
+        /* Agent Status */
+        .agent-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .agent-status-item {
+            display: flex; align-items: center; gap: 10px; padding: 12px;
+            background: var(--bg-primary); border-radius: 10px; border-left: 3px solid var(--border);
+        }
+        .agent-status-item.working { border-left-color: var(--success); }
+        .agent-status-item.waiting { border-left-color: var(--warning); }
+        .agent-status-item.idle { border-left-color: var(--text-muted); }
+        .agent-icon { font-size: 1.3rem; }
+        .agent-info { flex: 1; }
+        .agent-name { font-size: 0.85rem; font-weight: 600; }
+        .agent-task { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+        .agent-badge { padding: 2px 8px; border-radius: 8px; font-size: 0.65rem; font-weight: 600; }
+        .badge-working { background: rgba(34,197,94,0.2); color: var(--success); }
+        .badge-waiting { background: rgba(234,179,8,0.2); color: var(--warning); }
+        .badge-idle { background: rgba(100,116,139,0.2); color: var(--text-muted); }
+        
+        /* Connection Status */
+        .connection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .connection-item {
+            text-align: center; padding: 15px; background: var(--bg-primary); border-radius: 10px;
+        }
+        .connection-icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .connection-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; }
+        .connection-status { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; }
+        .connection-status.connected { background: rgba(34,197,94,0.2); color: var(--success); }
+        .connection-status.offline { background: rgba(239,68,68,0.2); color: var(--danger); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .status-dot.offline { background: var(--danger); }
+        .status-dot-sm { width: 6px; height: 6px; border-radius: 50%; }
+        .status-dot-sm.green { background: var(--success); }
+        .status-dot-sm.red { background: var(--danger); }
+        
+        /* Risk Items */
+        .risk-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            background: var(--bg-primary); border-radius: 8px; margin-bottom: 8px;
+        }
+        .risk-icon { font-size: 1.2rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+        .risk-icon.success { background: rgba(34,197,94,0.2); }
+        .risk-icon.warning { background: rgba(234,179,8,0.2); }
+        .risk-icon.danger { background: rgba(239,68,68,0.2); }
+        .risk-icon.info { background: rgba(59,130,246,0.2); }
+        .risk-content { flex: 1; }
+        .risk-title { font-size: 0.85rem; font-weight: 600; }
+        .risk-action { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+        
+        /* Session Chain */
+        .session-chain { padding: 10px 0; }
+        .session-node {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: var(--bg-primary); border-radius: 8px; margin-bottom: 8px;
+        }
+        .session-node.active { border-left: 3px solid var(--success); }
+        .session-node.waiting { border-left: 3px solid var(--warning); }
+        .session-arrow { color: var(--text-muted); font-size: 0.8rem; margin-left: 25px; }
+        
+        /* File List */
+        .file-list { max-height: 300px; overflow-y: auto; }
+        .file-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px;
+            border-bottom: 1px solid var(--border); font-size: 0.8rem;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-icon { font-size: 0.9rem; }
+        .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-size { color: var(--text-muted); font-size: 0.7rem; }
+        .file-time { color: var(--text-muted); font-size: 0.7rem; }
+        
+        /* Message Flow */
+        .message-flow { max-height: 300px; overflow-y: auto; }
+        .message-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: var(--bg-primary); border-radius: 8px; margin-bottom: 8px;
+        }
+        .message-from { padding: 3px 8px; background: rgba(249,115,22,0.2); color: var(--accent); border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+        .message-arrow { color: var(--text-muted); }
+        .message-to { padding: 3px 8px; background: rgba(59,130,246,0.2); color: var(--info); border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+        .message-content { flex: 1; font-size: 0.8rem; margin: 0 10px; }
+        .message-time { color: var(--text-muted); font-size: 0.7rem; }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 15px; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .grid-4 { grid-template-columns: 1fr 1fr; }
+            .grid-5 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 768px) {
+            .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
+            .connection-grid { grid-template-columns: 1fr; }
+        }
+        
+        .loading { text-align: center; padding: 30px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="index.html" style="padding: 8px 14px; background: var(--bg-card); border-radius: 8px; color: var(--text); text-decoration: none; font-size: 0.85rem; transition: all 0.3s;">
+                ← 返回首页
+            </a>
+            <div class="logo">
+                <span class="logo-icon">🦞</span>
+                <h1>DragonClaw 综合监控中心</h1>
+            </div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 10px;">
+            <span>API: <span id="api-url" style="color: var(--accent);">-</span></span>
+            <span>最后更新: <span id="last-update">-</span></span>
+            <button onclick="fetchDataWithXHR('/api/status', updateAll, console.error)" style="padding: 2px 8px; cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-size: 0.7rem;">刷新</button>
+        </div>
+    </header>
+    
+    <nav class="nav-tabs">
+        <button class="tab active" data-section="overview" onclick="showSection('overview', this)">📊 总览</button>
+        <button class="tab" data-section="usage" onclick="showSection('usage', this)">📈 用量</button>
+        <button class="tab" data-section="staff" onclick="showSection('staff', this)">👥 员工</button>
+        <button class="tab" data-section="collab" onclick="showSection('collab', this)">🔗 协作</button>
+        <button class="tab" data-section="tasks" onclick="showSection('tasks', this)">📋 任务</button>
+        <button class="tab" data-section="docs" onclick="showSection('docs', this)">📁 文档</button>
+        <button class="tab" data-section="memory" onclick="showSection('memory', this)">🧠 记忆</button>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+            <div id="auth-container"></div>
+        </div>
+    </nav>
+    
+    <main class="main">
+        <!-- ========== 总览 ========== -->
+        <section id="overview" class="section active">
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="stat-agents">-</div>
+                        <div class="label">活跃 Agent</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="stat-running">0</div>
+                        <div class="label">运行中任务</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="stat-completed">0</div>
+                        <div class="label">已完成</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="stat-uptime">0h</div>
+                        <div class="label">运行时长</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚠️ 系统状态与风险</h3>
+                    </div>
+                    <div class="card-body" id="risks-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 待处理事项</h3>
+                    </div>
+                    <div class="card-body" id="pending-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3>🖥️ 系统监控</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid-3">
+                        <div style="text-align: center; padding: 15px; background: var(--bg-primary); border-radius: 10px;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);" id="sys-cpu">-</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">CPU 使用率</div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill success" id="sys-cpu-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: var(--bg-primary); border-radius: 10px;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);" id="sys-mem">-</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">内存使用率</div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill success" id="sys-mem-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: var(--bg-primary); border-radius: 10px;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);" id="sys-disk">-</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">系统盘 /</div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill success" id="sys-disk-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div id="extra-disks-container" style="display: contents;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
+                        <div class="stat-row">
+                            <span class="label">负载均值</span>
+                            <span class="value" id="sys-load">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">可用内存</span>
+                            <span class="value" id="sys-mem-free">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">可用磁盘</span>
+                            <span class="value" id="sys-disk-free">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3>🚀 运营摘要</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid-3">
+                        <div class="stat-row">
+                            <span class="label">系统状态</span>
+                            <span class="value success" id="sys-status">● 正常</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">连接状态</span>
+                            <span id="conn-status" class="value success"><span class="status-dot online"></span> 实时监控中</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">Skills 就绪</span>
+                            <span class="value" id="skills-ready">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 用量 ========== -->
+        <section id="usage" class="section">
+            <!-- 模型信息 -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <h3>🤖 模型配置</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid-2" id="model-cards">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-5" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="usage-requests">0</div>
+                        <div class="label">今日 API 调用</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="usage-tokens">0</div>
+                        <div class="label">Total Tokens</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="usage-cache">0</div>
+                        <div class="label">缓存命中 <span id="usage-cache-rate" style="color: var(--success);">0%</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value">$<span id="usage-cost">0.00</span></div>
+                        <div class="label">预估花费</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-big">
+                        <div class="value" id="usage-uptime">0h</div>
+                        <div class="label">运行时长</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📊 订阅与限制</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-row">
+                            <span class="label">当前计划</span>
+                            <span class="value" id="sub-plan">免费版</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">额度说明</span>
+                            <span class="value" id="sub-quota-info" style="font-size: 0.75rem;">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">重置规则</span>
+                            <span class="value" id="sub-reset">N/A</span>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                                <span>请求限制</span>
+                                <span id="req-limit-text">0 / 1000</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill success" id="req-progress" style="width: 0%"></div>
+                            </div>
+                            <div id="req-reset-info" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;"></div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                                <span>Token 限制</span>
+                                <span id="token-limit-text">0 / 1M</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill success" id="token-progress" style="width: 0%"></div>
+                            </div>
+                            <div id="token-reset-info" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🔌 连接状态</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="connection-grid">
+                            <div class="connection-item">
+                                <div class="connection-icon">📱</div>
+                                <div class="connection-name">飞书</div>
+                                <div class="connection-status connected" id="conn-feishu">
+                                    <span class="status-dot-sm green"></span> 已连接
+                                </div>
+                            </div>
+                            <div class="connection-item">
+                                <div class="connection-icon">💬</div>
+                                <div class="connection-name">QQ Bot</div>
+                                <div class="connection-status offline" id="conn-qqbot">
+                                    <span class="status-dot-sm red"></span> 离线
+                                </div>
+                            </div>
+                            <div class="connection-item">
+                                <div class="connection-icon">🟢</div>
+                                <div class="connection-name">微信</div>
+                                <div class="connection-status offline" id="conn-weixin">
+                                    <span class="status-dot-sm red"></span> 离线
+                                </div>
+                            </div>
+                            <div class="connection-item">
+                                <div class="connection-icon">🌐</div>
+                                <div class="connection-name">Gateway</div>
+                                <div class="connection-status connected" id="conn-gateway">
+                                    <span class="status-dot-sm green"></span> 在线
+                                </div>
+                            </div>
+                            <div class="connection-item">
+                                <div class="connection-icon">🔑</div>
+                                <div class="connection-name">API</div>
+                                <div class="connection-status connected" id="conn-api">
+                                    <span class="status-dot-sm green"></span> 活跃
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>⚡ Token 消耗项</h3>
+                </div>
+                <div class="card-body">
+                    <div id="token-consumers">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 员工 ========== -->
+        <section id="staff" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>🤖 Agent 工作状态</h3>
+                    <span id="staff-summary" style="font-size: 0.8rem; color: var(--text-muted);">-</span>
+                </div>
+                <div class="card-body">
+                    <div class="agent-status-grid" id="agent-status-grid">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3>📊 任务分布</h3>
+                </div>
+                <div class="card-body" id="task-distribution">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 协作 ========== -->
+        <section id="collab" class="section">
+            <!-- Agent 参与统计 -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <h3>🤖 Agent 协作统计</h3>
+                    <span id="collab-summary" style="font-size: 0.8rem; color: var(--text-muted);">-</span>
+                </div>
+                <div class="card-body">
+                    <div class="agent-status-grid" id="agent-stats-grid">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 任务协作链路 -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <h3>🔗 任务协作链路</h3>
+                </div>
+                <div class="card-body" id="task-chains-list">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 实时通信 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>💬 实时通信日志</h3>
+                </div>
+                <div class="card-body">
+                    <div class="message-flow" id="message-flow">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 任务 ========== -->
+        <section id="tasks" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 当前任务</h3>
+                    <span id="task-summary" style="font-size: 0.8rem; color: var(--text-muted);">-</span>
+                </div>
+                <div class="card-body" id="task-list">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 文档 ========== -->
+        <section id="docs" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📁 源文件工作台</h3>
+                </div>
+                <div class="card-body" id="docs-list">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 记忆 ========== -->
+        <section id="memory" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>🧠 Agent 记忆文件</h3>
+                </div>
+                <div class="card-body" id="memory-list">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        🦞 DragonClaw | 综合监控中心 | <span id="footer-update">-</span>
+    </footer>
+    
+    <script src="js/common.js"></script>
+    <script src="js/dashboard.js"></script>
+        
+</body>
+</html>
